@@ -1,13 +1,7 @@
 # Picard
 
-## GitHub configuration
+The main goal of this project is to prove the following theorems:
 
-To set up your new GitHub repository, follow these steps:
+1. The Picard group of a commutative domain is isomorphic to its ideal class group.
 
-* Under your repository name, click **Settings**.
-* In the **Actions** section of the sidebar, click "General".
-* Check the box **Allow GitHub Actions to create and approve pull requests**.
-* Click the **Pages** section of the settings sidebar.
-* In the **Source** dropdown menu, select "GitHub Actions".
-
-After following the steps above, you can remove this section from the README file.
+2. All unique factorization domains have trivial Picard group.
