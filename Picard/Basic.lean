@@ -1,7 +1,11 @@
 import Mathlib.RingTheory.PicardGroup
 import Mathlib.RingTheory.ClassGroup
+import Mathlib.Algebra.Module.Projective
+import Mathlib.Data.Finsupp.SMul
+import Mathlib.RingTheory.Localization.BaseChange
 
 open scoped TensorProduct
+open scoped nonZeroDivisors
 
 /-!
 ## Picard group vs. ideal class group
@@ -11,6 +15,86 @@ for a commutative domain, the Picard group is (canonically) isomorphic to the id
 -/
 
 namespace Picard
+
+section TorsionFree
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+variable {P : Type*} [AddCommGroup P] [Module R P] [Module.Projective R P]
+
+/-- Projective modules over a domain are torsion-free:
+if `s ≠ 0` and `s • p = 0`, then `p = 0`.
+
+This is formulated via `NoZeroSMulDivisors`, and proved by using the defining embedding of a
+projective module into a free module. -/
+lemma projective_torsionFree {s : R} (hs : s ≠ 0) {p : P} (hsp : s • p = 0) : p = 0 := by
+  classical
+  obtain ⟨retract, hleft⟩ := (Module.projective_def (R := R) (P := P)).1 (by infer_instance)
+  haveI : NoZeroSMulDivisors R (P →₀ R) := by infer_instance
+  haveI : NoZeroSMulDivisors R P :=
+    (hleft.injective).noZeroSMulDivisors (R := R) (M := P) (N := P →₀ R) retract
+      (by simpa using retract.map_zero)
+      (by intro c x; simpa using retract.map_smulₛₗ c x)
+  exact (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hsp).resolve_left hs
+
+end TorsionFree
+
+section Localization
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+variable {T : Type*} [AddCommGroup T] [Module R T]
+
+/-- Localization map is injective for torsion-free modules.
+
+This is the Lean version of: if `R` is a domain, `S = R \ {0}` and `T` is torsion-free,
+then the canonical map `T → S⁻¹T` is injective.
+
+In Mathlib, we take `S := R⁰ := nonZeroDivisors R`. -/
+lemma localization_mkLinearMap_injective [NoZeroSMulDivisors R T] :
+    Function.Injective (LocalizedModule.mkLinearMap (R⁰) T) := by
+  -- Reduce to: the kernel is `⊥`.
+  refine (LinearMap.ker_eq_bot).1 ?_
+  ext t
+  constructor
+  · intro ht
+    rcases (LocalizedModule.mem_ker_mkLinearMap_iff (S := (R⁰)) (m := t)).1 ht with ⟨r, hrS, hrt⟩
+    have hr0 : (r : R) ≠ 0 := nonZeroDivisors.ne_zero (M₀ := R) hrS
+    exact (Submodule.mem_bot _).2 <|
+      (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hrt).resolve_left hr0
+  · intro ht
+    -- If `t = 0`, then it certainly maps to `0`.
+    have ht0 : t = 0 := by simpa [Submodule.mem_bot] using ht
+    -- Membership in the kernel is the same as mapping to `0`.
+    simpa [LinearMap.mem_ker, ht0]
+
+/-- A convenient reformulation: the canonical map `T → FractionRing R ⊗[R] T`,
+`t ↦ (1 : FractionRing R) ⊗ₜ t`, is injective for torsion-free `T`.
+
+This matches the statement “`T → S⁻¹T ≃ K ⊗[R] T` is injective” where `K` is the field of
+fractions and `S = R \ {0}`. -/
+lemma tensor_fractionRing_mk_one_injective [NoZeroSMulDivisors R T] :
+    Function.Injective (TensorProduct.mk R (FractionRing R) T 1) := by
+  -- `FractionRing R` is the localization of `R` at `R⁰`, and tensor base-change is a localized
+  -- module; therefore `t ↦ 1 ⊗ₜ t` is a localization map of modules.
+  refine (LinearMap.ker_eq_bot).1 ?_
+  ext t
+  constructor
+  · intro ht
+    haveI : IsLocalizedModule (R⁰) (TensorProduct.mk R (FractionRing R) T 1) := inferInstance
+    have ht' : ∃ s : (R⁰), s • t = 0 :=
+      (IsLocalizedModule.eq_zero_iff (S := (R⁰)) (f := TensorProduct.mk R (FractionRing R) T 1)
+          (m := t)).1 (show (TensorProduct.mk R (FractionRing R) T 1) t = 0 by
+            simpa [LinearMap.mem_ker] using ht)
+    rcases ht' with ⟨s, hs⟩
+    have hs0 : (s : R) ≠ 0 := nonZeroDivisors.coe_ne_zero (M₀ := R) s
+    have hsR : ((s : R) • t) = 0 := by
+      simpa [Submonoid.smul_def] using hs
+    exact (Submodule.mem_bot _).2 <|
+      (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero (R := R) (M := T) hsR).resolve_left hs0
+  · intro ht
+    have ht0 : t = 0 := by simpa [Submodule.mem_bot] using ht
+    simpa [LinearMap.mem_ker, ht0]
+
+end Localization
 
 variable (R : Type*) [CommRing R]
 
