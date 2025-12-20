@@ -122,12 +122,11 @@ theorem invertible_over_field (K : Type*) [Field K] (V : Type*) [AddCommGroup V]
 /-- Let K be the field of fractions of a domain R, and let M be an invertible R-module.
 Then M ⊗ R K is isomorphic to K as a left K-module. -/
 theorem tensor_invertible_with_field_of_fractions (R : Type*) [CommRing R] [IsDomain R]
-    (K : Type*) [Field K] [Algebra R K] [IsLocalization (Submonoid.powers 0 : Submonoid R) K]
     (M : Type*) [AddCommGroup M] [Module R M] (hinv : Module.Invertible R M) :
-  Nonempty (K ⊗[R] M ≃ₗ[K] K) := by
-  apply invertible_over_field K (K ⊗[R] M)
+  Nonempty (FractionRing R ⊗[R] M ≃ₗ[FractionRing R] FractionRing R) := by
+  apply invertible_over_field (K := FractionRing R) (V := FractionRing R ⊗[R] M)
   -- Tensoring preserves invertibility
-  exact Module.Invertible.instTensorProduct_2 R M K K
+  exact Module.Invertible.instTensorProduct_2 R M (FractionRing R) (FractionRing R)
 
 
 
