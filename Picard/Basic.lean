@@ -32,8 +32,8 @@ lemma projective_torsionFree {s : R} (hs : s ≠ 0) {p : P} (hsp : s • p = 0) 
   haveI : NoZeroSMulDivisors R (P →₀ R) := by infer_instance
   haveI : NoZeroSMulDivisors R P :=
     (hleft.injective).noZeroSMulDivisors (R := R) (M := P) (N := P →₀ R) retract
-      (by simpa using retract.map_zero)
-      (by intro c x; simpa using retract.map_smulₛₗ c x)
+      (by simp)
+      (by intro c x; simp)
   exact (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hsp).resolve_left hs
 
 end TorsionFree
@@ -64,7 +64,7 @@ lemma localization_mkLinearMap_injective [NoZeroSMulDivisors R T] :
     -- If `t = 0`, then it certainly maps to `0`.
     have ht0 : t = 0 := by simpa [Submodule.mem_bot] using ht
     -- Membership in the kernel is the same as mapping to `0`.
-    simpa [LinearMap.mem_ker, ht0]
+    simp [ht0]
 
 /-- A convenient reformulation: the canonical map `T → FractionRing R ⊗[R] T`,
 `t ↦ (1 : FractionRing R) ⊗ₜ t`, is injective for torsion-free `T`.
@@ -92,7 +92,7 @@ lemma tensor_fractionRing_mk_one_injective [NoZeroSMulDivisors R T] :
       (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero (R := R) (M := T) hsR).resolve_left hs0
   · intro ht
     have ht0 : t = 0 := by simpa [Submodule.mem_bot] using ht
-    simpa [LinearMap.mem_ker, ht0]
+    simp [ht0]
 
 end Localization
 
@@ -127,6 +127,55 @@ theorem tensor_invertible_with_field_of_fractions (R : Type*) [CommRing R] [IsDo
   apply invertible_over_field (K := FractionRing R) (V := FractionRing R ⊗[R] M)
   -- Tensoring preserves invertibility
   exact Module.Invertible.instTensorProduct_2 R M (FractionRing R) (FractionRing R)
+
+
+/-!
+## Embedding an invertible module into the fraction field
+
+This is the Lean version of the standard argument:
+
+- over a domain, a projective module is torsion-free, so `m ↦ 1 ⊗ₜ m` into the localization is
+  injective;
+- if `M` is invertible, then `K ⊗[R] M ≃ K` as `K`-modules, so composing yields an embedding
+  `M ↪ K`;
+- the image is finitely generated since `M` is.
+
+Note: your informal proof says “injective `R`-module”; the argument you outlined uses the
+`Module.Invertible` hypotheses (which give projective + finite), so we formalize that version.
+-/
+
+/-- If `R` is a domain and `M` is an invertible `R`-module, then `M` embeds into `FractionRing R`.
+
+Moreover, the image is a finitely generated `R`-submodule of `FractionRing R`. -/
+theorem embed_in_fractionRing_of_invertible (R : Type*) [CommRing R] [IsDomain R]
+    (M : Type*) [AddCommGroup M] [Module R M] [Module.Invertible R M] :
+    ∃ ι : M →ₗ[R] FractionRing R,
+      Function.Injective ι ∧ (LinearMap.range ι).FG := by
+  classical
+  -- `M` is torsion-free as an `R`-module (since it is projective over a domain).
+  haveI : NoZeroSMulDivisors R M := by
+    refine ⟨?_⟩
+    intro c m hcm
+    by_cases hc : c = 0
+    · exact Or.inl hc
+    · exact Or.inr (projective_torsionFree (R := R) (P := M) (s := c) hc (p := m) hcm)
+  -- The canonical map `M → K ⊗[R] M`, `m ↦ 1 ⊗ₜ m`, is injective.
+  have hMk : Function.Injective (TensorProduct.mk R (FractionRing R) M 1) :=
+    tensor_fractionRing_mk_one_injective (R := R) (T := M)
+  -- Choose a `K`-linear equivalence `K ⊗[R] M ≃ K` (since `M` is invertible).
+  obtain ⟨e⟩ :=
+    tensor_invertible_with_field_of_fractions (R := R) (M := M)
+      (hinv := (by infer_instance : Module.Invertible R M))
+  -- Compose to get `ι : M → K`.
+  let ι : M →ₗ[R] FractionRing R :=
+    (e.restrictScalars R).toLinearMap ∘ₗ TensorProduct.mk R (FractionRing R) M 1
+  refine ⟨ι, ?_, ?_⟩
+  · -- Injectivity follows from injectivity of both factors.
+    exact (e.restrictScalars R).injective.comp hMk
+  · -- The image is finitely generated since `M` is a finite module.
+    have htop : (⊤ : Submodule R M).FG := Module.Finite.fg_top (R := R) (M := M)
+    -- `range ι = map ι ⊤`.
+    simpa [ι, Submodule.map_top] using (htop.map ι)
 
 
 
