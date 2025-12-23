@@ -3,6 +3,7 @@ import Mathlib.RingTheory.ClassGroup
 import Mathlib.Algebra.Module.Projective
 import Mathlib.Data.Finsupp.SMul
 import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.FractionalIdeal.Operations
 
 open scoped TensorProduct
 open scoped nonZeroDivisors
@@ -176,6 +177,42 @@ theorem embed_in_fractionRing_of_invertible (R : Type*) [CommRing R] [IsDomain R
     have htop : (⊤ : Submodule R M).FG := Module.Finite.fg_top (R := R) (M := M)
     -- `range ι = map ι ⊤`.
     simpa [ι, Submodule.map_top] using (htop.map ι)
+
+
+/-- Every invertible `R`-module over a domain is isomorphic to an (integral) ideal of `R`.
+
+Here “invertible ideal” is meant in the same sense as `Module.Invertible R I` for the
+`R`-module `I` (viewing an ideal as an `R`-submodule of `R`).
+
+Construction: embed `M` into `K := FractionRing R`, take the induced finitely generated
+`R`-submodule `I₀ ⊆ K`, view it as a fractional ideal, and take its numerator ideal in `R`.
+-/
+theorem invertible_isomorphic_to_ideal (R : Type*) [CommRing R] [IsDomain R]
+    (M : Type*) [AddCommGroup M] [Module R M] [Module.Invertible R M] :
+    ∃ I : Ideal R, Module.Invertible R I ∧ Nonempty (M ≃ₗ[R] I) := by
+  classical
+  -- Embed `M` into the fraction field with finitely generated image.
+  obtain ⟨ι, hιinj, hιfg⟩ := embed_in_fractionRing_of_invertible (R := R) (M := M)
+  -- Regard the image as a fractional ideal, using finite generation to clear denominators.
+  let I₀ : FractionalIdeal (R⁰) (FractionRing R) :=
+    ⟨LinearMap.range ι,
+      FractionalIdeal.isFractional_of_fg (R := R) (S := (R⁰)) (P := FractionRing R) hιfg⟩
+  let I : Ideal R := I₀.num
+  have hden0 : ((I₀.den : R) ≠ 0) := nonZeroDivisors.coe_ne_zero (M₀ := R) I₀.den
+  -- `M ≃ range ι` since `ι` is injective.
+  have e1 : M ≃ₗ[R] LinearMap.range ι := LinearEquiv.ofInjective ι hιinj
+  -- `range ι` is definitional equal to `I₀` as a type of elements of `FractionRing R`.
+  have e2 : LinearMap.range ι ≃ₗ[R] I₀ := by
+    -- Both sides are the same subtype of `FractionRing R`.
+    simpa [I₀] using (LinearEquiv.refl R (LinearMap.range ι))
+  -- `I₀ ≃ I₀.num` via multiplication by the denominator.
+  have e3 : I₀ ≃ₗ[R] I := by
+    simpa [I, I₀] using
+      (FractionalIdeal.equivNum (S := (R⁰)) (P := FractionRing R) (I := I₀) hden0)
+  have eMI : M ≃ₗ[R] I := e1.trans (e2.trans e3)
+  refine ⟨I, ?_, ⟨eMI⟩⟩
+  -- Transfer invertibility along the `R`-linear equivalence.
+  exact Module.Invertible.congr (R := R) (M := M) eMI
 
 
 
