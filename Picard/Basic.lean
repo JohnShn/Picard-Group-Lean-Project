@@ -97,37 +97,38 @@ lemma tensor_fractionRing_mk_one_injective [NoZeroSMulDivisors R T] :
 
 end Localization
 
-variable (R : Type*) [CommRing R]
+section InvertibleOverFields
 
-/-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
-theorem picardGroup_mulEquiv_classGroup
-    [IsDomain R] :
-  Nonempty (CommRing.Pic R ≃* ClassGroup R) := by
-  sorry
-
+variable {K : Type*} [Field K]
+variable {V : Type*} [AddCommGroup V] [Module K V] [Module.Invertible K V]
 
 /-- Invertible $K$-modules are trivial in the Picard group of a field.
 
 Let $K$ be a field and let $V$ be a $K$-module. If $V$ is invertible as a $K$-module, then
 there exists a $K$-linear isomorphism $V \cong K$.
 Equivalently, $V$ is $1$-dimensional as a $K$-vector space. -/
-theorem invertible_over_field (K : Type*) [Field K] (V : Type*) [AddCommGroup V] [Module K V]
-    (hinv : Module.Invertible K V) :
-  Nonempty (V ≃ₗ[K] K) := by
+theorem invertible_over_field : Nonempty (V ≃ₗ[K] K) := by
   -- Apply the mathlib lemma Module.Invertible.free_iff_linearEquiv
   apply (Module.Invertible.free_iff_linearEquiv).mp
   -- Over a field, every module is a vector space and hence is free
   exact Module.Free.of_divisionRing K V
 
+end InvertibleOverFields
+
+section TensorWithFractionField
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+variable {M : Type*} [AddCommGroup M] [Module R M] [Module.Invertible R M]
 
 /-- Let K be the field of fractions of a domain R, and let M be an invertible R-module.
 Then M ⊗ R K is isomorphic to K as a left K-module. -/
-theorem tensor_invertible_with_field_of_fractions (R : Type*) [CommRing R] [IsDomain R]
-    (M : Type*) [AddCommGroup M] [Module R M] (hinv : Module.Invertible R M) :
+theorem tensor_invertible_with_field_of_fractions :
   Nonempty (FractionRing R ⊗[R] M ≃ₗ[FractionRing R] FractionRing R) := by
   apply invertible_over_field (K := FractionRing R) (V := FractionRing R ⊗[R] M)
   -- Tensoring preserves invertibility
-  exact Module.Invertible.instTensorProduct_2 R M (FractionRing R) (FractionRing R)
+  --exact Module.Invertible.instTensorProduct_2 R M (FractionRing R) (FractionRing R)
+
+end TensorWithFractionField
 
 
 /-!
@@ -145,11 +146,15 @@ Note: your informal proof says “injective `R`-module”; the argument you outl
 `Module.Invertible` hypotheses (which give projective + finite), so we formalize that version.
 -/
 
+section InvertibleEmbeddings
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+variable {M : Type*} [AddCommGroup M] [Module R M] [Module.Invertible R M]
+
 /-- If `R` is a domain and `M` is an invertible `R`-module, then `M` embeds into `FractionRing R`.
 
 Moreover, the image is a finitely generated `R`-submodule of `FractionRing R`. -/
-theorem embed_in_fractionRing_of_invertible (R : Type*) [CommRing R] [IsDomain R]
-    (M : Type*) [AddCommGroup M] [Module R M] [Module.Invertible R M] :
+theorem embed_in_fractionRing_of_invertible :
     ∃ ι : M →ₗ[R] FractionRing R,
       Function.Injective ι ∧ (LinearMap.range ι).FG := by
   classical
@@ -164,9 +169,7 @@ theorem embed_in_fractionRing_of_invertible (R : Type*) [CommRing R] [IsDomain R
   have hMk : Function.Injective (TensorProduct.mk R (FractionRing R) M 1) :=
     tensor_fractionRing_mk_one_injective (R := R) (T := M)
   -- Choose a `K`-linear equivalence `K ⊗[R] M ≃ K` (since `M` is invertible).
-  obtain ⟨e⟩ :=
-    tensor_invertible_with_field_of_fractions (R := R) (M := M)
-      (hinv := (by infer_instance : Module.Invertible R M))
+  obtain ⟨e⟩ := tensor_invertible_with_field_of_fractions (R := R) (M := M)
   -- Compose to get `ι : M → K`.
   let ι : M →ₗ[R] FractionRing R :=
     (e.restrictScalars R).toLinearMap ∘ₗ TensorProduct.mk R (FractionRing R) M 1
@@ -187,8 +190,7 @@ Here “invertible ideal” is meant in the same sense as `Module.Invertible R I
 Construction: embed `M` into `K := FractionRing R`, take the induced finitely generated
 `R`-submodule `I₀ ⊆ K`, view it as a fractional ideal, and take its numerator ideal in `R`.
 -/
-theorem invertible_isomorphic_to_ideal (R : Type*) [CommRing R] [IsDomain R]
-    (M : Type*) [AddCommGroup M] [Module R M] [Module.Invertible R M] :
+theorem invertible_isomorphic_to_ideal :
     ∃ I : Ideal R, Module.Invertible R I ∧ Nonempty (M ≃ₗ[R] I) := by
   classical
   -- Embed `M` into the fraction field with finitely generated image.
@@ -214,7 +216,12 @@ theorem invertible_isomorphic_to_ideal (R : Type*) [CommRing R] [IsDomain R]
   -- Transfer invertibility along the `R`-linear equivalence.
   exact Module.Invertible.congr (R := R) (M := M) eMI
 
+end InvertibleEmbeddings
 
 
+/-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
+theorem picardGroup_mulEquiv_classGroup (R : Type*) [CommRing R] [IsDomain R] :
+  Nonempty (CommRing.Pic R ≃* ClassGroup R) := by
+  sorry
 
 end Picard
