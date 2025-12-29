@@ -219,6 +219,20 @@ theorem invertible_isomorphic_to_ideal :
 end InvertibleEmbeddings
 
 
+section Dictionary
+
+/-- Principal = Free of rank 1
+Invertible module = invertible ideal
+tensor product of modules = product of ideals -/
+
+
+
+
+
+
+end Dictionary
+
+
 /-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
 theorem picardGroup_mulEquiv_classGroup (R : Type*) [CommRing R] [IsDomain R] :
   Nonempty (CommRing.Pic R ≃* ClassGroup R) := by
