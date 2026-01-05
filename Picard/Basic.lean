@@ -1,11 +1,5 @@
 import Mathlib.RingTheory.PicardGroup
 import Mathlib.RingTheory.ClassGroup
-import Mathlib.Algebra.Module.Projective
-import Mathlib.LinearAlgebra.FreeModule.Basic
-import Mathlib.RingTheory.Ideal.Span
-import Mathlib.Data.Finsupp.SMul
-import Mathlib.RingTheory.Localization.BaseChange
-import Mathlib.RingTheory.FractionalIdeal.Operations
 
 open scoped TensorProduct
 open scoped nonZeroDivisors
