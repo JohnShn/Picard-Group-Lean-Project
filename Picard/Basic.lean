@@ -1,6 +1,8 @@
 import Mathlib.RingTheory.PicardGroup
 import Mathlib.RingTheory.ClassGroup
 import Mathlib.Algebra.Module.Projective
+import Mathlib.LinearAlgebra.FreeModule.Basic
+import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Data.Finsupp.SMul
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.FractionalIdeal.Operations
@@ -218,19 +220,69 @@ theorem invertible_isomorphic_to_ideal :
 
 end InvertibleEmbeddings
 
+section PrincipalIdealFreeRankOne
 
-section Dictionary
+variable {R : Type*} [CommRing R] [IsDomain R]
 
-/-- Principal = Free of rank 1
-Invertible module = invertible ideal
-tensor product of modules = product of ideals -/
+/--
+Over a commutative domain, the nonzero principal ideal `(a)` (implemented as `Ideal.span {a}`)
+is a free `R`-module of rank `1`, witnessed by a linear equivalence with `R`.
+-/
+theorem principalIdeal_free_rank1 (a : R) (ha : a ≠ 0) :
+    Module.Free R (Ideal.span ({a} : Set R)) ∧
+      Nonempty (Ideal.span ({a} : Set R) ≃ₗ[R] R) := by
+  classical
+  -- `f : R →ₗ[R] Ideal.span {a}`,  r ↦ r * a
+  let f : R →ₗ[R] Ideal.span ({a} : Set R) :=
+  { toFun := fun r =>
+      ⟨r * a, by
+        have ha_mem : a ∈ Ideal.span ({a} : Set R) :=
+          Ideal.subset_span (by simp)
+        -- ideals are closed under left multiplication by ring elements
+        simpa [mul_assoc] using
+          (Ideal.mul_mem_left (Ideal.span ({a} : Set R)) r ha_mem)⟩
+    map_add' := by
+      intro r s
+      ext
+      simp [add_mul]
+    map_smul' := by
+      intro r s
+      ext
+      simp [mul_assoc] }
+  have hf_bij : Function.Bijective f := by
+    constructor
+    · -- injective
+      intro r s hrs
+      have hrs' : (f r).1 = (f s).1 := congrArg Subtype.val hrs
+      dsimp [f] at hrs'  -- now `hrs' : r * a = s * a`
+      have h0 : (r - s) * a = 0 := by
+        calc
+          (r - s) * a = r * a - s * a := by
+            simp [sub_mul]
+          _ = 0 := by
+            -- from `r*a = s*a` we get `r*a - s*a = 0`
+            simpa [sub_eq_zero] using hrs'
+      have hrs0 : r - s = 0 := (mul_eq_zero.mp h0).resolve_right ha
+      exact sub_eq_zero.mp hrs0
+    · -- surjective
+      intro x
+      rcases (Ideal.mem_span_singleton'.1 x.property) with ⟨r, hr⟩
+      refine ⟨r, ?_⟩
+      ext
+      -- `f r` is `r*a`, while `hr` is `a*r = x`; commute
+      have : r * a = (x : R) := by
+        simpa [mul_comm] using hr
+      dsimp [f]
+      exact this
+  let e : R ≃ₗ[R] Ideal.span ({a} : Set R) :=
+    LinearEquiv.ofBijective f hf_bij
+  refine ⟨?_, ⟨e.symm⟩⟩
+  haveI : Module.Free R R := Module.Free.self R
+  exact Module.Free.of_equiv e
+
+end PrincipalIdealFreeRankOne
 
 
-
-
-
-
-end Dictionary
 
 
 /-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
