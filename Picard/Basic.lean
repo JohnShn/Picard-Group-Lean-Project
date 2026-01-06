@@ -279,9 +279,9 @@ end PrincipalIdealFreeRankOne
 
 
 
-/-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
-theorem picardGroup_mulEquiv_classGroup (R : Type*) [CommRing R] [IsDomain R] :
-  Nonempty (CommRing.Pic R ≃* ClassGroup R) := by
-  sorry
+--/-- The Picard group of a commutative domain is isomorphic to its ideal class group. -/
+--theorem picardGroup_mulEquiv_classGroup (R : Type*) [CommRing R] [IsDomain R] :
+--  Nonempty (CommRing.Pic R ≃* ClassGroup R) := by
+--  sorry
 
 end Picard

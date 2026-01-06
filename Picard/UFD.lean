@@ -367,6 +367,7 @@ lemma exists_bezout_coeffs_of_isUnit_fractionalIdeal_of_span {n : ℕ} {c : Fin 
   rcases hC1 with ⟨ℓ, hℓ, hsum⟩
   exact ⟨ℓ, hℓ, by simpa using hsum⟩
 
+omit [UniqueFactorizationMonoid R] in
 lemma exists_clearDenoms_fin {n : ℕ} (ℓ : Fin n → FractionRing R) :
     ∃ (x : R) (hx0 : x ≠ 0) (b : Fin n → R),
       ∀ i,
@@ -382,16 +383,16 @@ lemma exists_clearDenoms_fin {n : ℕ} (ℓ : Fin n → FractionRing R) :
       IsLocalization.integerMultiple (M := (R⁰)) (s := (Finset.univ : Finset (Fin n)))
           (S := FractionRing R) ℓ ⟨i, by simp⟩
   refine ⟨x, ?_, b, ?_⟩
-  · simpa [x] using (nonZeroDivisors.coe_ne_zero x₀)
+  · simp [x] --using (nonZeroDivisors.coe_ne_zero x₀)
   · intro i
     have hbi :
         algebraMap R (FractionRing R) (b i) =
           IsLocalization.commonDenom (M := (R⁰)) (s := (Finset.univ : Finset (Fin n)))
               (S := FractionRing R) ℓ •
             ℓ i := by
-      simpa [b] using
-        (IsLocalization.map_integerMultiple (M := (R⁰)) (s := (Finset.univ : Finset (Fin n)))
-          (S := FractionRing R) ℓ ⟨i, by simp⟩)
+      simp [b] --using
+        --(IsLocalization.map_integerMultiple (M := (R⁰)) (s := (Finset.univ : Finset (Fin n)))
+          --(S := FractionRing R) ℓ ⟨i, by simp⟩)
     -- Rewrite the scalar multiplication as multiplication by `algebraMap x`.
     calc
       algebraMap R (FractionRing R) (b i) =
@@ -401,7 +402,7 @@ lemma exists_clearDenoms_fin {n : ℕ} (ℓ : Fin n → FractionRing R) :
       _ = algebraMap R (FractionRing R) x * ℓ i := by
           -- `•` here is the scalar action of `R⁰`; rewrite it to the `R`-action and then to
           -- multiplication by `algebraMap`.
-          simp [x₀, x, Submonoid.smul_def, Algebra.smul_def, mul_assoc]
+          simp [x₀, x, Submonoid.smul_def, Algebra.smul_def]
 
 omit [IsDomain R] [UniqueFactorizationMonoid R] in
 lemma dvd_relations_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : Ideal R}
@@ -409,7 +410,7 @@ lemma dvd_relations_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : I
     {K : FractionalIdeal R⁰ (FractionRing R)}
     (hJK : (J : FractionalIdeal R⁰ (FractionRing R)) * K = 1)
     {ℓ : Fin n → FractionRing R} (hℓK : ∀ i, ℓ i ∈ K)
-    {x : R} (hx0 : x ≠ 0) {b : Fin n → R}
+    {x : R} {b : Fin n → R}
     (hb :
       ∀ i,
         algebraMap R (FractionRing R) (b i) =
@@ -459,7 +460,7 @@ lemma dvd_relations_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : I
 omit [UniqueFactorizationMonoid R] in
 lemma mem_mul_span_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : Ideal R}
     (hJspan : J = Ideal.span (Set.range c))
-    {K : FractionalIdeal R⁰ (FractionRing R)}
+    --{K : FractionalIdeal R⁰ (FractionRing R)}
     {ℓ : Fin n → FractionRing R}
     (hsum :
       (Finset.univ : Finset (Fin n)).sum
@@ -474,7 +475,6 @@ lemma mem_mul_span_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : Id
   let B : Ideal R := Ideal.span (Set.range b)
   have hinj : Function.Injective (algebraMap R (FractionRing R)) :=
     IsFractionRing.injective R (FractionRing R)
-
   have hx_eq_sum : x = (Finset.univ : Finset (Fin n)).sum (fun i => c i * b i) := by
     -- Work in the fraction field, then pull back by injectivity.
     apply hinj
@@ -530,7 +530,6 @@ lemma mem_mul_span_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : Id
         _ = ax := hsum_ax
     -- Rewrite `algebraMap` of the sum on the right.
     simpa [ax, map_sum] using this.symm
-
   -- Prove the sum is in the product ideal, then rewrite using `hx_eq_sum`.
   have hsum_mem :
       (Finset.univ : Finset (Fin n)).sum (fun i => c i * b i) ∈ J * B := by
@@ -548,6 +547,7 @@ lemma mem_mul_span_of_bezout_and_clearDenoms {n : ℕ} {c : Fin n → R} {J : Id
     simpa [hx_eq_sum] using hsum_mem
   simpa [B] using hxmem
 
+omit [UniqueFactorizationMonoid R] in
 lemma exists_relations_of_isUnit_fractionalIdeal_of_span {n : ℕ} {c : Fin n → R} {J : Ideal R}
     (hJspan : J = Ideal.span (Set.range c))
     (hJunit : IsUnit (J : FractionalIdeal R⁰ (FractionRing R))) :
@@ -563,9 +563,9 @@ lemma exists_relations_of_isUnit_fractionalIdeal_of_span {n : ℕ} {c : Fin n �
   refine ⟨x, hx0, b, ?_, ?_⟩
   · exact
       dvd_relations_of_bezout_and_clearDenoms (R := R) (c := c) (J := J) hJspan (K := K) hJK hℓK
-        hx0 hb
+        hb
   · exact
-      mem_mul_span_of_bezout_and_clearDenoms (R := R) (c := c) (J := J) (K := K) (ℓ := ℓ) hJspan
+      mem_mul_span_of_bezout_and_clearDenoms (R := R) (c := c) (J := J) (ℓ := ℓ) hJspan
         hsum₁ hb
 
 /-!
