@@ -2,7 +2,7 @@ import Mathlib.RingTheory.ClassGroup
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
 
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors Pointwise
 
 namespace Picard
 
@@ -102,23 +102,202 @@ This lemma is the heart of the proof sketch. It should be filled in by implement
 localization/factorization argument described in the prompt.
 -/
 
+/-- A family `c : Fin n → R` has “unit gcd” if every common divisor is a unit. -/
+def CommonDivisorsAreUnits {n : ℕ} (c : Fin n → R) : Prop :=
+  ∀ d : R, (∀ i : Fin n, d ∣ c i) → IsUnit d
+
+/-!
+### Lemma 1 (sketch): invertible fractional ideals are finitely generated
+-/
+
+omit [IsDomain R] [UniqueFactorizationMonoid R] in
+lemma ideal_fg_of_isUnit_fractionalIdeal (I : Ideal R)
+    (hI : IsUnit (I : FractionalIdeal R⁰ (FractionRing R))) :
+    (I : Submodule R R).FG := by
+  classical
+  -- This is exactly `Ideal.fg_of_isUnit` specialized to the fraction field.
+  simpa using
+    (Ideal.fg_of_isUnit (S := (R⁰)) (P := FractionRing R)
+      (inj := IsFractionRing.injective R (FractionRing R)) I hI)
+
+/-!
+### GCD normalization (sketch)
+
+From `I` invertible as a fractional ideal, choose finitely many generators `aᵢ` of `I`,
+extract a gcd `y` (up to units), and write `aᵢ = y * cᵢ`. Let `J = (cᵢ)`.
+Then `I = (y) * J`, `J` is invertible as a fractional ideal, and the `cᵢ` have unit gcd.
+-/
+
+lemma exists_gcd_normalization_of_isUnit_fractionalIdeal (I : Ideal R)
+    (hI : IsUnit (I : FractionalIdeal R⁰ (FractionRing R))) :
+    ∃ (y : R) (n : ℕ) (_hn : 0 < n) (c : Fin n → R) (J : Ideal R),
+      I = Ideal.span ({y} : Set R) * J ∧
+      J = Ideal.span (Set.range c) ∧
+      IsUnit (J : FractionalIdeal R⁰ (FractionRing R)) ∧
+      CommonDivisorsAreUnits (R := R) c := by
+  sorry
+
+/-!
+### Producing `x` and `bᵢ` from invertibility (sketch)
+
+From `J * J⁻¹ = 1`, obtain a linear combination `∑ cᵢ ℓᵢ = 1` with `ℓᵢ ∈ J⁻¹`;
+clear denominators to get `bᵢ ∈ R` and `x ≠ 0` with:
+* `x ∈ J * (bᵢ)` (corresponding to `x = ∑ cᵢ bᵢ`), and
+* `x ∣ cᵢ * bⱼ` for all `i, j`.
+-/
+
+lemma exists_relations_of_isUnit_fractionalIdeal_of_span {n : ℕ} {c : Fin n → R} {J : Ideal R}
+    (hJspan : J = Ideal.span (Set.range c))
+    (hJunit : IsUnit (J : FractionalIdeal R⁰ (FractionRing R))) :
+    ∃ (x : R) (_hx0 : x ≠ 0) (b : Fin n → R),
+      (∀ i j : Fin n, x ∣ c i * b j) ∧
+      x ∈ J * Ideal.span (Set.range b) := by
+  sorry
+
+/-!
+### Lemma 2 (sketch): “unit gcd” divisibility lemma in a UFD
+-/
+
+lemma dvd_of_dvd_mul_of_commonDivisorsAreUnits {n : ℕ} {c : Fin n → R}
+    (hc : CommonDivisorsAreUnits (R := R) c) {x b : R} (hx0 : x ≠ 0)
+    (h : ∀ i : Fin n, x ∣ c i * b) : x ∣ b := by
+  classical
+  -- We prove the stronger statement by induction on the prime factorization of `x`.
+  let P : R → Prop :=
+    fun x' => x' ≠ 0 → ∀ b' : R, (∀ i : Fin n, x' ∣ c i * b') → x' ∣ b'
+  have hP : P x := by
+    -- Induction on `x` using `UniqueFactorizationMonoid.induction_on_prime`.
+    refine UniqueFactorizationMonoid.induction_on_prime (α := R) x ?_ ?_ ?_
+    · intro hx'
+      exact (hx' rfl).elim
+    · intro x' hx' hx'0 b' _
+      -- A unit divides everything.
+      exact hx'.dvd
+    · intro a p ha0 hp ih hp0 b' hb'
+      -- Show `p ∣ b'` by choosing an index where `p ∤ c i`.
+      have hex : ∃ i : Fin n, ¬ p ∣ c i := by
+        by_contra hcontra
+        have hall : ∀ i : Fin n, p ∣ c i := by
+          intro i
+          by_contra hi
+          exact hcontra ⟨i, hi⟩
+        have : IsUnit p := hc p hall
+        exact hp.not_unit this
+      rcases hex with ⟨i0, hi0⟩
+      have hpCb : p ∣ c i0 * b' := by
+        exact dvd_trans (dvd_mul_right p a) (hb' i0)
+      have hpb : p ∣ b' := (hp.dvd_or_dvd hpCb).resolve_left hi0
+      rcases hpb with ⟨b₁, rfl⟩
+      -- Reduce to the induction hypothesis for `a` after cancelling `p`.
+      have ha : a ∣ b₁ := by
+        refine ih ha0 b₁ ?_
+        intro i
+        -- From `p * a ∣ c i * (p * b₁)` we cancel `p` (since `p ≠ 0`).
+        have hpa : p * a ∣ p * (c i * b₁) := by
+          -- reassociate/commute the right-hand side.
+          simpa [mul_assoc, mul_left_comm, mul_comm] using hb' i
+        exact (mul_dvd_mul_iff_left hp.ne_zero).1 hpa
+      -- Conclude `p * a ∣ p * b₁`.
+      exact mul_dvd_mul_left p ha
+  exact hP hx0 b h
+
+/-!
+### Concluding `J = ⊤` (sketch)
+
+Using the relations `x ∣ cᵢ * bⱼ` and Lemma 2, show `x ∣ bⱼ` for all `j`, hence
+`(bᵢ) ≤ (x)`. Then `J * (bᵢ) = (x)` (by the relations), hence `J * (x) = (x)`, and
+cancelling the (invertible) principal fractional ideal `(x)` yields `J = 1`.
+-/
+
+omit [UniqueFactorizationMonoid R] in
+lemma ideal_eq_top_of_relations {n : ℕ} {c : Fin n → R} {J : Ideal R}
+    (hJspan : J = Ideal.span (Set.range c))
+    (hJunit : IsUnit (J : FractionalIdeal R⁰ (FractionRing R)))
+    (hc : CommonDivisorsAreUnits (R := R) c) {x : R} (hx0 : x ≠ 0) {b : Fin n → R}
+    (hdiv : ∀ i j : Fin n, x ∣ c i * b j)
+    (hxmem : x ∈ J * Ideal.span (Set.range b))
+    (hb : ∀ j : Fin n, x ∣ b j) :
+    J = ⊤ := by
+  classical
+  -- Keep these hypotheses around: they are produced upstream (and are part of the sketch), but the
+  -- conclusion below only needs the explicit relations.
+  have _ := hJunit
+  have _ := hc
+  -- We do not use `hJunit` or `hc` here: once the relations are available, the conclusion follows
+  -- from ideal arithmetic and cancellation by a nonzero principal ideal.
+  let B : Ideal R := Ideal.span (Set.range b)
+  have hxmem' : x ∈ J * B := by simpa [B] using hxmem
+  -- `B ≤ (x)` since all generators are divisible by `x`.
+  have hB_le : B ≤ Ideal.span ({x} : Set R) := by
+    refine (Ideal.span_le).2 ?_
+    rintro z ⟨j, rfl⟩
+    rcases hb j with ⟨t, ht⟩
+    refine (Ideal.mem_span_singleton').2 ?_
+    refine ⟨t, ?_⟩
+    simpa [mul_comm, mul_left_comm, mul_assoc] using ht.symm
+  -- `J * B = (x)`: inclusion `≤` from `hdiv`, and inclusion `≥` from `hxmem`.
+  have hJB_le : J * B ≤ Ideal.span ({x} : Set R) := by
+    -- Rewrite `J * B` as the span of pairwise products of generators.
+    have hmul :
+        J * B = Ideal.span ((Set.range c) * (Set.range b)) := by
+      calc
+        J * B = Ideal.span (Set.range c) * Ideal.span (Set.range b) := by
+          simp [hJspan, B]
+        _ = Ideal.span ((Set.range c) * (Set.range b)) := by
+          simpa using (Ideal.span_mul_span' (S := (Set.range c)) (T := (Set.range b)) (R := R))
+    rw [hmul]
+    refine (Ideal.span_le).2 ?_
+    rintro z hz
+    rcases hz with ⟨z₁, hz₁, z₂, hz₂, rfl⟩
+    rcases hz₁ with ⟨i, rfl⟩
+    rcases hz₂ with ⟨j, rfl⟩
+    rcases hdiv i j with ⟨t, ht⟩
+    refine (Ideal.mem_span_singleton').2 ?_
+    refine ⟨t, ?_⟩
+    -- `t * x = c i * b j`, using commutativity.
+    simpa [mul_comm, mul_left_comm, mul_assoc] using ht.symm
+  have hspan_le : Ideal.span ({x} : Set R) ≤ J * B :=
+    (Ideal.span_singleton_le_iff_mem (I := J * B) (x := x)).2 hxmem'
+  have hJB : J * B = Ideal.span ({x} : Set R) := le_antisymm hJB_le hspan_le
+  -- From `J * B = (x)` and `B ≤ (x)`, deduce `J * (x) = (x)`.
+  have hJx : J * Ideal.span ({x} : Set R) = Ideal.span ({x} : Set R) := by
+    apply le_antisymm
+    · -- `J * (x) ≤ (x)` since `J ≤ ⊤`.
+      have : J * Ideal.span ({x} : Set R) ≤ (⊤ : Ideal R) * Ideal.span ({x} : Set R) :=
+        Ideal.mul_mono_left (le_top : J ≤ (⊤ : Ideal R))
+      simpa using this
+    · -- `(x) = J * B ≤ J * (x)`.
+      have : J * B ≤ J * Ideal.span ({x} : Set R) := Ideal.mul_mono_right hB_le
+      simpa [hJB] using this
+  -- Cancel the nonzero principal ideal `(x)` on the right.
+  have hxcomm : Ideal.span ({x} : Set R) * J = Ideal.span ({x} : Set R) := by
+    simpa [mul_comm] using hJx
+  have : Ideal.span ({x} : Set R) * J = Ideal.span ({x} : Set R) * ⊤ := by
+    calc
+      Ideal.span ({x} : Set R) * J = Ideal.span ({x} : Set R) := hxcomm
+      _ = Ideal.span ({x} : Set R) * ⊤ := (Ideal.mul_top _).symm
+  exact (Ideal.span_singleton_mul_right_inj (R := R) hx0).1 this
+
 /-- In a UFD, an integral ideal that is invertible as a fractional ideal is principal. -/
 theorem ideal_isPrincipal_of_isUnit_fractionalIdeal (I : Ideal R)
     (hI : IsUnit (I : FractionalIdeal R⁰ (FractionRing R))) :
     I.IsPrincipal := by
   classical
-  -- Step 1: pick a nonzero `f ∈ I`.
-  obtain ⟨f, hfI, hf0⟩ := exists_ne_zero_mem_of_isUnit_fractionalIdeal (R := R) (I := I) hI
-
-  -- Step 2: factor `f` into prime elements, choose local principalizations around each prime,
-  -- and define the candidate generator `h` as a product of primes to certain exponents.
-  --
-  -- Step 3: show `I = (h)`, by checking after localizing at elements on a principal cover,
-  -- and comparing prime exponents using uniqueness of factorization.
-  --
-  -- The commutative algebra content is nontrivial; we leave it as `sorry` for now.
-  -- The values `f`, `hfI`, `hf0` are recorded so the statement matches the proof sketch.
-  sorry
+  obtain ⟨y, n, hn, c, J, hIJ, hJspan, hJunit, hc⟩ :=
+    exists_gcd_normalization_of_isUnit_fractionalIdeal (R := R) (I := I) hI
+  obtain ⟨x, hx0, b, hdiv, hxmem⟩ :=
+    exists_relations_of_isUnit_fractionalIdeal_of_span (R := R) (c := c) (J := J) hJspan hJunit
+  have hb : ∀ j : Fin n, x ∣ b j := by
+    intro j
+    refine dvd_of_dvd_mul_of_commonDivisorsAreUnits (R := R) (c := c) hc (x := x) (b := b j) hx0
+      ?_
+    intro i
+    simpa [mul_assoc, mul_left_comm, mul_comm] using hdiv i j
+  have hJtop : J = ⊤ :=
+    ideal_eq_top_of_relations (R := R) (c := c) (J := J) hJspan hJunit hc (x := x) hx0
+      (b := b) hdiv hxmem hb
+  refine ⟨y, ?_⟩
+  simpa [hJtop] using hIJ
 
 /-!
 ### UFD implies class group is trivial
