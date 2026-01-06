@@ -22,8 +22,6 @@ The key input is the commutative algebra statement:
 > If `R` is a UFD and `I ⊆ R` is an ideal such that its image in the monoid of fractional ideals
 > is invertible, then `I` is principal.
 
-The user-provided proof sketch is implemented as a lemma with several subordinate lemmas; the
-hard commutative algebra steps are currently left as `sorry`.
 -/
 
 lemma ideal_ne_bot_of_isUnit_fractionalIdeal {I : Ideal R}
@@ -269,12 +267,6 @@ From `J * J⁻¹ = 1`, obtain a linear combination `∑ cᵢ ℓᵢ = 1` with `�
 clear denominators to get `bᵢ ∈ R` and `x ≠ 0` with:
 * `x ∈ J * (bᵢ)` (corresponding to `x = ∑ cᵢ bᵢ`), and
 * `x ∣ cᵢ * bⱼ` for all `i, j`.
--/
-
-/-!
-The actual commutative algebra work is factored into intermediate lemmas. These are intended to be
-substantially simpler than the final statement and to follow the proof sketch in the prompt.
-They are currently left as `sorry` placeholders.
 -/
 
 omit [IsDomain R] [UniqueFactorizationMonoid R] in
