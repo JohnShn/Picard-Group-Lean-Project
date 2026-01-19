@@ -1,0 +1,37 @@
+In any integral domain $R$, a non-zero fractional ideal $I$ is invertible (as a fractional ideal) if and only if it is an invertible $R$-module (i.e., a projective module of rank 1).
+Per your preferences, the formal proof follows below.
+Definitions
+Let $R$ be an integral domain with field of fractions $K$. Let $I$ be a non-zero fractional ideal of $R$.
+1.	Invertible Fractional Ideal: $I$ is invertible if there exists a fractional ideal $J \subseteq K$ such that the product ideal $IJ = R$. Note that if such a $J$ exists, it is necessarily unique and equal to $(R:I) = \{x \in K \mid xI \subseteq R\}$.
+2.	Invertible Module: An $R$-module $M$ is invertible if there exists an $R$-module $N$ such that $M \otimes_R N \cong R$. This is equivalent to stating that $M$ is finitely generated, projective, and of rank 1.
+Theorem
+Let $R$ be an integral domain and $I$ a non-zero fractional ideal. $I$ is an invertible fractional ideal if and only if $I$ is an invertible $R$-module.
+Proof
+$\implies$ (Sufficiency)
+Assume $I$ is an invertible fractional ideal. Then $I(R:I) = R$.
+Since $1 \in R$, there exist finite collections of elements $x_1, \dots, x_n \in I$ and $y_1, \dots, y_n \in (R:I)$ such that:
+
+$$\sum_{i=1}^n x_i y_i = 1$$
+
+For each $i$, define the homomorphism $f_i: I \to R$ by $f_i(a) = y_i a$. This is well-defined because $y_i \in (R:I)$, so $y_i I \subseteq R$.
+For any $a \in I$, we have:
+
+$$a = a \cdot 1 = a \sum_{i=1}^n x_i y_i = \sum_{i=1}^n x_i (y_i a) = \sum_{i=1}^n f_i(a) x_i$$
+
+The set $\{(x_i, f_i)\}_{i=1}^n$ constitutes a dual basis for $I$. By the Dual Basis Lemma, $I$ is a finitely generated projective $R$-module.
+Since $I$ is a non-zero submodule of the fraction field $K$, $I \otimes_R K \cong K$, so $I$ has rank 1.
+Thus, $I$ is an invertible $R$-module.
+$\impliedby$ (Necessity)
+Assume $I$ is an invertible $R$-module.
+Since $I$ is invertible, the evaluation map $\phi: I \otimes_R \text{Hom}_R(I, R) \to R$ defined by $\phi(x \otimes f) = f(x)$ is an isomorphism.
+Let $I^{-1} = (R:I) = \{q \in K \mid qI \subseteq R\}$.
+There is a canonical isomorphism $\psi: (R:I) \to \text{Hom}_R(I, R)$ given by $q \mapsto (x \mapsto qx)$.
+This is an isomorphism because $I$ is a fractional ideal of a domain; any $R$-linear map from $I$ to $R$ is multiplication by some element of $K$ (specifically an element in $(R:I)$).
+Using this identification, the evaluation map corresponds to the product of ideals inside $K$. Specifically, the image of the evaluation map is the ideal product $I \cdot (R:I)$.
+
+$$\text{Im}(\phi) = \left\{ \sum f_k(x_k) \right\} = \left\{ \sum q_k x_k \mid q_k \in (R:I), x_k \in I \right\} = I(R:I)$$
+
+Since $\phi$ is an isomorphism onto $R$, the image must be $R$.
+Therefore, $I(R:I) = R$.
+Thus, $I$ is an invertible fractional ideal.
+
