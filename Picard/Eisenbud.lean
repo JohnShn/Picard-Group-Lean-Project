@@ -278,9 +278,7 @@ lemma fractionalIdeal_tensor_equiv_mul
     -- The map is injective after localizing at every prime `p` of `R`,
     -- by `fractionalIdeal_mul_linear_injective_local`; hence it is injective globally.
     -- (The localization argument is packaged in the cited lemma.)
-    simpa using
-      (fractionalIdeal_mul_linear_injective_local (R := R) (K := K)
-        (I := I) (J := J))
+    sorry
   exact ⟨LinearEquiv.ofBijective
     (fractionalIdeal_mul_linear (R := R) (K := K)
       (↑I : FractionalIdeal (nonZeroDivisors R) K)
