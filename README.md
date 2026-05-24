@@ -13,7 +13,7 @@ This repository contains the formalization of commutative algebra theorems conce
 * **Build Command:**
 ```bash
   lake build
-  
+```
 
 ## Upstream Contributions
 The formalizations contained in `UFD.lean` establishing the triviality of the ideal class group for UFDs and normalized GCD domains have been merged upstream into Mathlib via pull request 33744.
